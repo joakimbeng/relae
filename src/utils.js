@@ -77,7 +77,7 @@ function setParamValues(declarationParams, queryParams) {
   return Object.keys(declarationParams).reduce((params, key) => {
     if (isQueryParam(declarationParams[key])) {
       params[key] = queryParams[declarationParams[key].slice(1, -1)];
-    } else if (typeof declarationParams[key] === 'object') {
+    } else if (declarationParams[key] !== null && typeof declarationParams[key] === 'object') {
       params[key] = setParamValues(declarationParams[key], queryParams);
     } else {
       params[key] = declarationParams[key];

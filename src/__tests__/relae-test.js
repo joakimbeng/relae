@@ -68,6 +68,29 @@ describe('relae', function () {
         done();
       });
     });
+
+    it('does not crash for filter with NULL values (Issue #1)', function (done) {
+      nock('http://localhost')
+        .get('/items/1?parentId=')
+        .reply(200, {id: 3, title: 'My first non-parent item', parentId: null});
+
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>', parentId: null}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer itemId={1} />);
+
+      this.Item.once('render', () => {
+        let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+        item.getDOMNode().textContent.should.equal('id: 3, My first non-parent item');
+        done();
+      });
+    });
   });
 
   describe('mutations', function () {
