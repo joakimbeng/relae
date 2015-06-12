@@ -71,7 +71,7 @@ describe('relae', function () {
 
     it('does not crash for filter with NULL values (Issue #1)', function (done) {
       nock('http://localhost')
-        .get('/items/1?parentId=')
+        .get('/items/3?parentId')
         .reply(200, {id: 3, title: 'My first non-parent item', parentId: null});
 
       let ItemContainer = Relae.createContainer(this.Item, {
@@ -83,7 +83,7 @@ describe('relae', function () {
         }
       });
 
-      let container = TestHelpers.renderComponent(<ItemContainer itemId={1} />);
+      let container = TestHelpers.renderComponent(<ItemContainer itemId={3} />);
 
       this.Item.once('render', () => {
         let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');

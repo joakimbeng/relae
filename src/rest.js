@@ -49,11 +49,10 @@ function run({request, params, options}) {
   return xhr({
     method: request.method,
     baseUrl: baseUrl,
-    url: url,
-    json: true,
-    [hasBody(request) ? 'body' : 'qs']: data
+    path: url,
+    [hasBody(request) ? 'entity' : 'params']: data
   })
-  .then(({body}) => body);
+  .then(({entity}) => entity);
 }
 
 function onPush() {
