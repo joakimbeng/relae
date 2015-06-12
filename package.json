@@ -1,0 +1,51 @@
+{
+  "name": "relae",
+  "version": "1.0.0",
+  "description": "A Relay inspired library for React and RESTful backends",
+  "main": "es5/index.js",
+  "scripts": {
+    "test": "mocha --growl --require src/__tests__/setup.js --compilers js:babel/register -R spec 'src/__tests__/*-test.js'",
+    "lint": "eslint src",
+    "prebuild": "npm run lint -s",
+    "build": "rm -rf es5/* && babel src -d es5 -D --ignore 'src/__tests__'",
+    "prepublish": "npm run build -s"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joakimbeng/relae.git"
+  },
+  "keywords": [
+    "relay",
+    "flux",
+    "react",
+    "rest"
+  ],
+  "author": "Joakim Carlstein <joakim@klei.se>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joakimbeng/relae/issues"
+  },
+  "homepage": "https://github.com/joakimbeng/relae#readme",
+  "devDependencies": {
+    "babel": "^5.5.0",
+    "babel-eslint": "^3.1.13",
+    "chai": "^2.3.0",
+    "eslint": "^0.22.1",
+    "eslint-plugin-react": "^2.5.0",
+    "jsdom": "^5.4.3",
+    "mocha": "^2.2.5",
+    "nock": "^2.4.0",
+    "react": "^0.13.3",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
+  },
+  "dependencies": {
+    "event-emitter": "^0.3.3",
+    "object-assign": "^3.0.0",
+    "request": "^2.57.0",
+    "sift": "^1.1.1"
+  },
+  "peerDependencies": {
+    "react": "*"
+  }
+}
