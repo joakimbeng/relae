@@ -71,7 +71,7 @@ describe('relae', function () {
 
     it('does not crash for filter with NULL values (Issue #1)', function (done) {
       nock('http://localhost')
-        .get('/items/3?parentId')
+        .get('/items/3?parentId=null')
         .reply(200, {id: 3, title: 'My first non-parent item', parentId: null});
 
       let ItemContainer = Relae.createContainer(this.Item, {
@@ -113,6 +113,29 @@ describe('relae', function () {
       container.ee.once('render', () => {
         let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
         items.length.should.equal(0);
+        done();
+      });
+    });
+
+    it('does not send `[object Object]` as query parameter content (Issue #3)', function (done) {
+      nock('http://localhost')
+        .get('/items/4?parentId=' + encodeURIComponent('{"$eq":2}'))
+        .reply(200, {id: 4, parentId: 2, title: 'An item'});
+
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>', parentId: {$eq: 2}}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer itemId={4} />);
+
+      this.Item.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
+        items.length.should.equal(1);
         done();
       });
     });

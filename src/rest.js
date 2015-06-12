@@ -41,9 +41,15 @@ function run({request, params, options}) {
   const baseUrl = options.baseUrl || null;
 
   let data = assign({}, params);
+  let dataProp = 'entity';
 
   if (params.$id) {
     delete data.$id;
+  }
+
+  if (!hasBody(request)) {
+    dataProp = 'params';
+    data = Object.keys(data).reduce((obj, key) => assign(obj, {[key]: JSON.stringify(data[key])}), {});
   }
 
   return xhr({
@@ -53,13 +59,12 @@ function run({request, params, options}) {
     headers: {
       'Content-Type': 'application/json'
     },
-    [hasBody(request) ? 'entity' : 'params']: data
+    [dataProp]: data
   })
   .then((res) => {
-    // console.log(res);
     return res.entity;
-  }, ({status}) => {
-    throw status;
+  }, (res) => {
+    throw res.status;
   });
 }
 
