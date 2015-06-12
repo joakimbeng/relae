@@ -50,9 +50,17 @@ function run({request, params, options}) {
     method: request.method,
     baseUrl: baseUrl,
     path: url,
+    headers: {
+      'Content-Type': 'application/json'
+    },
     [hasBody(request) ? 'entity' : 'params']: data
   })
-  .then(({entity}) => entity);
+  .then((res) => {
+    // console.log(res);
+    return res.entity;
+  }, ({status}) => {
+    throw status;
+  });
 }
 
 function onPush() {

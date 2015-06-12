@@ -70,7 +70,7 @@ function getInitialStateFromRequests(requests) {
   return requests.reduce((state, request) => {
     state[request.name] = getInitialStateFromRequest(request);
     return state;
-  }, {$containerLoading: true});
+  }, {});
 }
 
 function setParamValues(declarationParams, queryParams) {

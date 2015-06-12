@@ -1,8 +1,14 @@
 import React from 'react';
 import assign from 'object-assign';
+import eventEmitter from 'event-emitter';
 import * as store from './store';
 import rest from './rest';
 import {getContainerName, getRequestsFromQueries, getInitialStateFromRequests, setParamValues} from './utils';
+
+const STATES = {
+  PENDING: 'PENDING',
+  DONE: 'DONE'
+};
 
 export default (Component, containerOptions) => {
   containerOptions = assign({}, containerOptions);
@@ -13,7 +19,7 @@ export default (Component, containerOptions) => {
   const displayName = getContainerName(Component);
   const requests = getRequestsFromQueries(queries);
   const mutationRequests = getRequestsFromQueries(mutations);
-  const initialState = getInitialStateFromRequests(requests);
+  const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(requests));
 
   return React.createClass({
     displayName,
@@ -23,6 +29,7 @@ export default (Component, containerOptions) => {
     },
 
     componentWillMount() {
+      this.ee = eventEmitter();
       const qp = assign({}, queryParams, this.props);
       Promise.all(requests.map(request => {
         const params = setParamValues(request.params, qp);
@@ -38,7 +45,7 @@ export default (Component, containerOptions) => {
             console.error(err);
           });
       }))
-      .then(() => this.setState({$containerLoading: false}));
+      .then(() => this.setState({$containerState: STATES.DONE}));
     },
 
     componentDidMount() {
@@ -46,6 +53,7 @@ export default (Component, containerOptions) => {
     },
 
     componentWillUnmount() {
+      this.ee = undefined;
       this.unregister();
     },
 
@@ -73,7 +81,9 @@ export default (Component, containerOptions) => {
     },
 
     render() {
-      if (this.state.$containerLoading) {
+      this.ee.emit('render');
+
+      if (this.state.$containerState !== STATES.DONE) {
         return null;
       }
 

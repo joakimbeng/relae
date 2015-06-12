@@ -91,6 +91,31 @@ describe('relae', function () {
         done();
       });
     });
+
+    it('does not set `props` properties to strings when not finding a resource (Issue #2)', function (done) {
+      nock('http://localhost')
+        .get('/items/4')
+        .reply(404);
+
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer itemId={4} />);
+
+      // console.log(container);
+
+      container.ee.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
+        items.length.should.equal(0);
+        done();
+      });
+    });
   });
 
   describe('mutations', function () {

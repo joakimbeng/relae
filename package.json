@@ -1,10 +1,10 @@
 {
   "name": "relae",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A Relay inspired library for React and RESTful backends",
   "main": "es5/index.js",
   "scripts": {
-    "test": "mocha --growl --require src/__tests__/setup.js --compilers js:babel/register -R spec 'src/__tests__/*-test.js'",
+    "test": "NODE_ENV=test mocha --growl --require src/__tests__/setup.js --compilers js:babel/register -R spec 'src/__tests__/*-test.js'",
     "lint": "eslint src",
     "prebuild": "npm run lint -s",
     "build": "rm -rf es5/* && babel src -d es5 -D --ignore 'src/__tests__'",
