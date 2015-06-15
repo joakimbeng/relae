@@ -1,7 +1,7 @@
 Relä
 =====
 
-> A Relay inspired library for React and RESTful backends
+> A [Relay](http://facebook.github.io/react/blog/2015/02/20/introducing-relay-and-graphql.html) inspired library for [React](https://facebook.github.io/react/index.html) and RESTful backends
 
 "Relä" is the Swedish word for "Relay".
 
@@ -78,13 +78,13 @@ A query consists of three parts: a name, a path and a filter:
 }
 ```
 
-The `name` is the name of the `props` property to be set for the wrapped component with the data from the query result. The `path` is the resource path in your API, e.g. having `baseUrl = "http://localhost"` and `path = "item"` would give the full resource URL: `"http://localhost/item"`. See below about [`filter`](#Filter).
+The `name` is the name of the `props` property to be set for the wrapped component with the data from the query result. The `path` is the resource path in your API, e.g. having `baseUrl = "http://localhost"` and `path = "item"` would give the full resource URL: `"http://localhost/item"`. See below about [`filter`](#filter).
 
 ### Key `queryParams`
 
 **Type:** `Object`
 
-The `queryParams` object is merged with the created Relä container's `props` and then passed to the query filters, see [more on filter params](#Filter) below.
+The `queryParams` object is merged with the created Relä container's `props` and then passed to the query filters, see [more on filter params](#filter) below.
 
 **Example:**
 
@@ -110,7 +110,7 @@ Specifies what mutative actions a wrapped component can do, the syntax is simila
 }
 ```
 
-The `name` of the action is used to create a mutation function that's passed to the wrapped component as `props`. The `path` is the resource path in the API, see [`queries`](#Key-queries) above. `type` can be any of `$create` (makes a POST request), `$update` (PUT request) and `$delete` (DELETE request). See below about [`filter`](#Filter).
+The `name` of the action is used to create a mutation function that's passed to the wrapped component as `props`. The `path` is the resource path in the API, see [`queries`](#key-queries) above. `type` can be any of `$create` (makes a POST request), `$update` (PUT request) and `$delete` (DELETE request). See below about [`filter`](#filter).
 
 ## Filter
 
