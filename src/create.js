@@ -1,4 +1,5 @@
 import React from 'react';
+import update from 'react/lib/update';
 import assign from 'object-assign';
 import eventEmitter from 'event-emitter';
 import * as store from './store';
@@ -12,14 +13,14 @@ const STATES = {
 
 export default (Component, containerOptions) => {
   containerOptions = assign({}, containerOptions);
+  let queryParams = assign({}, containerOptions.queryParams);
   const options = assign({}, containerOptions.options);
-  const queryParams = assign({}, containerOptions.queryParams);
   const queries = assign({}, containerOptions.queries);
   const mutations = assign({}, containerOptions.mutations);
   const displayName = getContainerName(Component);
-  const requests = getRequestsFromQueries(queries);
+  const queryRequests = getRequestsFromQueries(queries);
   const mutationRequests = getRequestsFromQueries(mutations);
-  const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(requests));
+  const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(queryRequests));
 
   return React.createClass({
     displayName,
@@ -30,22 +31,7 @@ export default (Component, containerOptions) => {
 
     componentWillMount() {
       this.ee = eventEmitter();
-      const qp = assign({}, queryParams, this.props);
-      Promise.all(requests.map(request => {
-        const params = setParamValues(request.params, qp);
-        const existingData = store.getRequestData(request, params);
-        if (existingData) {
-          return this.setState({[request.name]: existingData});
-        }
-        return rest.run({request, params, options})
-          .then(data => store.setRequestData(request, params, data))
-          .then(data => this.setState({[request.name]: data}))
-          .catch((err) => {
-            // FIXME: real error handling
-            console.error(err);
-          });
-      }))
-      .then(() => this.setState({$containerState: STATES.DONE}));
+      this.fetch(queryRequests);
     },
 
     componentDidMount() {
@@ -62,11 +48,33 @@ export default (Component, containerOptions) => {
         return;
       }
       const qp = assign({}, queryParams, this.props);
-      requests.filter(request => request.collection === collection)
+      queryRequests.filter(request => request.collection === collection)
         .forEach(request => {
           const params = setParamValues(request.params, qp);
           this.setState({[request.name]: store.getRequestData(request, params)});
         });
+    },
+
+    fetch(requests, opt) {
+      const qp = assign({}, queryParams, this.props);
+      Promise.all(requests.map(request => {
+        const params = setParamValues(request.params, qp);
+        if (!opt || !opt.force) {
+          const existingData = store.getRequestData(request, params);
+          if (existingData) {
+            return this.setState({[request.name]: existingData});
+          }
+        }
+        return rest.run({request, params, options})
+          .then(data => {
+            return store.setRequestData(request, params, data);
+          })
+          .catch((err) => {
+            // FIXME: real error handling
+            console.error(err);
+          });
+      }))
+      .then(() => this.setState({$containerState: STATES.DONE}));
     },
 
     mutate(request) {
@@ -80,6 +88,13 @@ export default (Component, containerOptions) => {
         });
     },
 
+    setQueryParams(newParams) {
+      const paramNames = Object.keys(newParams);
+      const requestsToRedo = queryRequests.filter(request => paramNames.some(name => request.paramDependencies.indexOf(name) > -1));
+      queryParams = update(queryParams, {$merge: newParams});
+      this.fetch(requestsToRedo, {force: true});
+    },
+
     render() {
       this.ee.emit('render');
 
@@ -91,8 +106,10 @@ export default (Component, containerOptions) => {
         return assign({[mutation.name]: this.mutate.bind(this, mutation)}, mutatorProps);
       }, {});
 
+      const setQueryParams = this.setQueryParams;
+
       const props = assign(
-        {},
+        {setQueryParams},
         this.props,
         this.state,
         mutators

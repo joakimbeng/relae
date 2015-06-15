@@ -3,6 +3,8 @@ import sift from 'sift';
 import eventEmitter from 'event-emitter';
 
 sift.useOperator('id', (a, b) => a === b.id);
+sift.useOperator('limit', () => true);
+sift.useOperator('skip', () => true);
 
 const ee = eventEmitter();
 

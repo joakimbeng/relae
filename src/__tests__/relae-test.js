@@ -8,6 +8,8 @@ import * as TestHelpers from './test-helpers';
 
 const {TestUtils, update} = React.addons;
 
+const enc = val => encodeURIComponent(val);
+
 describe('relae', function () {
   afterEach(function () {
     TestHelpers.unmountComponents();
@@ -23,12 +25,12 @@ describe('relae', function () {
         render() {
           const id = this.props.item.id;
           const title = this.props.item.title;
-          return <div>id: {id}, {title}</div>;
+          return <div className="item">id: {id}, {title}</div>;
         }
       });
     });
 
-    it('gets single item using queryParams', function (done) {
+    it('gets a single item using queryParams', function (done) {
       let ItemContainer = Relae.createContainer(this.Item, {
         options: {
           baseUrl: 'http://localhost'
@@ -50,7 +52,7 @@ describe('relae', function () {
       });
     });
 
-    it('gets single item using props', function (done) {
+    it('gets a single item using props', function (done) {
       let ItemContainer = Relae.createContainer(this.Item, {
         options: {
           baseUrl: 'http://localhost'
@@ -66,6 +68,70 @@ describe('relae', function () {
         let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
         item.getDOMNode().textContent.should.equal('id: 1, My first item');
         done();
+      });
+    });
+
+    it('can set query params to retrigger data fetch', function (done) {
+      nock('http://localhost')
+        .get(`/items?parentId=1&${enc('$limit')}=2&${enc('$skip')}=0`)
+        .reply(200, [
+          {id: 11, title: 'Sub item 1', parentId: 1},
+          {id: 12, title: 'Sub item 2', parentId: 1}
+        ]);
+
+      nock('http://localhost')
+        .get(`/items?parentId=1&${enc('$limit')}=2&${enc('$skip')}=2`)
+        .reply(200, [
+          {id: 13, title: 'Sub item 3', parentId: 1},
+          {id: 14, title: 'Sub item 4', parentId: 1}
+        ]);
+
+      let Item = this.Item;
+
+      let ParentItem = TestHelpers.createEmittingComponent('ParentItem', {
+        nextPage() {
+          this.props.setQueryParams({skip: 2});
+        },
+
+        render() {
+          return (
+            <div>
+              {this.props.items.map((item, i) => <Item key={i} item={item} />)}
+              <button className="next-button" onClick={this.nextPage}>Next page</button>
+            </div>
+          );
+        }
+      });
+
+      let ParentItemContainer = Relae.createContainer(ParentItem, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queryParams: {
+          limit: 2,
+          skip: 0
+        },
+        queries: {
+          items: {items: {parentId: 1, $limit: '<limit>', $skip: '<skip>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ParentItemContainer />);
+
+      ParentItem.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithClass(container, 'item');
+        items.length.should.equal(2);
+        items[0].getDOMNode().textContent.should.equal('id: 11, Sub item 1');
+        items[1].getDOMNode().textContent.should.equal('id: 12, Sub item 2');
+        let button = TestUtils.findRenderedDOMComponentWithClass(container, 'next-button');
+        ParentItem.once('render', () => {
+          items = TestUtils.scryRenderedDOMComponentsWithClass(container, 'item');
+          items.length.should.equal(2);
+          items[0].getDOMNode().textContent.should.equal('id: 13, Sub item 3');
+          items[1].getDOMNode().textContent.should.equal('id: 14, Sub item 4');
+          done();
+        });
+        TestUtils.Simulate.click(button);
       });
     });
 
@@ -108,8 +174,6 @@ describe('relae', function () {
 
       let container = TestHelpers.renderComponent(<ItemContainer itemId={4} />);
 
-      // console.log(container);
-
       container.ee.once('render', () => {
         let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
         items.length.should.equal(0);
@@ -119,7 +183,7 @@ describe('relae', function () {
 
     it('does not send `[object Object]` as query parameter content (Issue #3)', function (done) {
       nock('http://localhost')
-        .get('/items/4?parentId=' + encodeURIComponent('{"$eq":2}'))
+        .get(`/items/4?parentId=${enc('{"$eq":2}')}`)
         .reply(200, {id: 4, parentId: 2, title: 'An item'});
 
       let ItemContainer = Relae.createContainer(this.Item, {

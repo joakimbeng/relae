@@ -173,8 +173,8 @@ Have a look at the tests for now...
 ### Work in progress - TODO
 
 - [x] Cache request data in a universal store to not make unnecessary requests
+- [x] Add `setQueryParams` method to retrigger dependent requests
 - [ ] More usage examples
-- [ ] Add `setQueryParams` method to retrigger dependant requests
 - [ ] Make sure the components are updated optimistically for mutative actions
 - [ ] Handle errors and maybe retries in a good way
 - [ ] Work more on the isomorphism of the module (using the `dump` and `bootstrap` functions)
