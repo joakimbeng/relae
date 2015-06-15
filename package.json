@@ -6,7 +6,7 @@
   "scripts": {
     "test": "NODE_ENV=test mocha --growl --require src/__tests__/setup.js --compilers js:babel/register -R spec 'src/__tests__/*-test.js'",
     "lint": "eslint src",
-    "prebuild": "npm run lint -s",
+    "prebuild": "npm run lint -s && npm test -s",
     "build": "rm -rf es5/* && babel src -d es5 -D --ignore 'src/__tests__'",
     "prepublish": "npm run build -s"
   },
