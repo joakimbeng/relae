@@ -4,7 +4,7 @@
 import React from 'react/addons';
 import nock from 'nock';
 import Relae from '../.';
-import * as TestHelpers from './test-helpers';
+import TestHelpers from 'react-test-helpers';
 
 const {TestUtils, update} = React.addons;
 
@@ -21,7 +21,8 @@ describe('relae', function () {
         .get('/items/1')
         .reply(200, {id: 1, title: 'My first item'});
 
-      this.Item = TestHelpers.createEmittingComponent('Item', {
+      this.Item = TestHelpers.createEmittingComponent({
+        displayName: 'Item',
         render() {
           const id = this.props.item.id;
           const title = this.props.item.title;
@@ -88,7 +89,9 @@ describe('relae', function () {
 
       let Item = this.Item;
 
-      let ParentItem = TestHelpers.createEmittingComponent('ParentItem', {
+      let ParentItem = TestHelpers.createEmittingComponent({
+        displayName: 'ParentItem',
+
         nextPage() {
           this.props.setQueryParams({skip: 2});
         },
@@ -211,7 +214,9 @@ describe('relae', function () {
         .get('/stories')
         .reply(200, [{id: 1, title: 'My first post'}]);
 
-      let Story = this.Story = TestHelpers.createEmittingComponent('Story', {
+      let Story = this.Story = TestHelpers.createEmittingComponent({
+        displayName: 'Story',
+
         onTitleChange(e) {
           this.props.updateStory(update(this.props.story, {title: {$set: e.target.value}}));
         },
@@ -243,7 +248,9 @@ describe('relae', function () {
         }
       });
 
-      let StoryList = this.StoryList = TestHelpers.createEmittingComponent('StoryList', {
+      let StoryList = this.StoryList = TestHelpers.createEmittingComponent({
+        displayName: 'StoryList',
+
         render() {
           return (
             <div>

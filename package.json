@@ -36,6 +36,7 @@
     "mocha": "^2.2.5",
     "nock": "^2.4.0",
     "react": "^0.13.3",
+    "react-test-helpers": "^1.0.0",
     "sinon": "^1.14.1",
     "sinon-chai": "^2.7.0"
   },
