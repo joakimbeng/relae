@@ -39,13 +39,27 @@ function hasBody(request) {
   return BODY_METHODS.indexOf(request.method) > -1;
 }
 
+function addLeadingSlash(url) {
+  if (url[0] !== '/') {
+    return '/' + url;
+  }
+  return url;
+}
+
+function stripTrailingSlash(url) {
+  if (url[url.length - 1] === '/') {
+    return url.slice(0, -1);
+  }
+  return url;
+}
+
 function run({request, params, data, options}) {
   const httpRequest = getHttpRequest(request);
-  const path = params.$id ? httpRequest.url.replace('<$id>', params.$id) : httpRequest.url;
-  const baseUrl = options.baseUrl || null;
+  const url = params.$id ? httpRequest.url.replace('<$id>', params.$id) : httpRequest.url;
+  const baseUrl = options.baseUrl || '';
+  const path = stripTrailingSlash(baseUrl) + addLeadingSlash(url);
   const config = {
     method: httpRequest.method,
-    baseUrl,
     path,
     headers: {
       'Content-Type': 'application/json'

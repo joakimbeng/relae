@@ -219,6 +219,30 @@ describe('relae', function () {
       });
     });
 
+    it('does use `baseUrl` option (Issue #4)', function (done) {
+      nock('http://remotehost')
+        .get(url`/items/1`)
+        .reply(200, {id: 1, title: 'An item'});
+
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://remotehost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer itemId={1} />);
+
+      this.Item.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
+        items.length.should.equal(1);
+        items[0].getDOMNode().textContent.should.equal('id: 1, An item');
+        done();
+      });
+    });
+
     it('does not overwrite a whole collection in the store for different filters', function (done) {
       nock('http://localhost')
         .get(`/items?parentId=1`)
