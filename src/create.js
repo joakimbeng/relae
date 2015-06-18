@@ -2,8 +2,7 @@ import React from 'react';
 import update from 'react/lib/update';
 import assign from 'object-assign';
 import eventEmitter from 'event-emitter';
-import * as store from './store';
-import rest from './rest';
+import data from './data';
 import {getContainerName, getRequestsFromQueries, getInitialStateFromRequests, setParamValues} from './utils';
 
 const STATES = {
@@ -11,16 +10,18 @@ const STATES = {
   DONE: 'DONE'
 };
 
-export default (Component, containerOptions) => {
-  containerOptions = assign({}, containerOptions);
-  let queryParams = assign({}, containerOptions.queryParams);
-  const options = assign({}, containerOptions.options);
-  const queries = assign({}, containerOptions.queries);
-  const mutations = assign({}, containerOptions.mutations);
+export default (Component, config) => {
+  config = assign({}, config);
+  let queryParams = assign({}, config.queryParams);
+  const options = assign({}, config.options);
+  const queries = assign({}, config.queries);
+  const mutations = assign({}, config.mutations);
   const displayName = getContainerName(Component);
   const queryRequests = getRequestsFromQueries(queries);
   const mutationRequests = getRequestsFromQueries(mutations);
+  const initialRequestNames = queryRequests.map(({name}) => name);
   const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(queryRequests));
+
 
   return React.createClass({
     displayName,
@@ -30,12 +31,14 @@ export default (Component, containerOptions) => {
     },
 
     componentWillMount() {
+      this.initialRequestNames = initialRequestNames.slice(0);
       this.ee = eventEmitter();
-      this.fetch(queryRequests);
+      this.fetcher = data(options);
+      this.unregister = this.fetcher.onReceive(this.onReceive);
     },
 
     componentDidMount() {
-      this.unregister = store.onChange(this.onStoreChange);
+      this.fetch(queryRequests);
     },
 
     componentWillUnmount() {
@@ -43,49 +46,34 @@ export default (Component, containerOptions) => {
       this.unregister();
     },
 
-    onStoreChange(collection) {
+    onReceive({request, data: newState}) {
       if (this.isMounted && !this.isMounted()) {
         return;
       }
-      const qp = assign({}, queryParams, this.props);
-      queryRequests.filter(request => request.collection === collection)
-        .forEach(request => {
-          const params = setParamValues(request.params, qp);
-          this.setState({[request.name]: store.getRequestData(request, params)});
-        });
+      this.setState({[request.name]: newState});
+      const requestNames = this.initialRequestNames.slice(0);
+      let i = requestNames.indexOf(request.name);
+      if (i > -1) {
+        requestNames.splice(i, 1);
+        if (!requestNames.length) {
+          this.setState({$containerState: STATES.DONE});
+        }
+        this.initialRequestNames = requestNames;
+      }
     },
 
     fetch(requests, opt) {
       const qp = assign({}, queryParams, this.props);
-      Promise.all(requests.map(request => {
+      requests.forEach(request => {
         const params = setParamValues(request.params, qp);
-        if (!opt || !opt.force) {
-          const existingData = store.getRequestData(request, params);
-          if (existingData) {
-            return this.setState({[request.name]: existingData});
-          }
-        }
-        return rest.run({request, params, options})
-          .then(data => {
-            return store.setRequestData(request, params, data);
-          })
-          .catch((err) => {
-            // FIXME: real error handling
-            console.error(err);
-          });
-      }))
-      .then(() => this.setState({$containerState: STATES.DONE}));
+        this.fetcher.fetch({request, params, options: opt});
+      });
     },
 
-    mutate(request) {
+    mutate(request, requestData) {
       const qp = assign({}, queryParams, this.props);
       const params = setParamValues(request.params, qp);
-      rest.run({request, params, options})
-        .then(data => store.setRequestData(request, params, data))
-        .catch((err) => {
-          // FIXME: real error handling
-          console.error(err);
-        });
+      this.fetcher.run({request, params, data: requestData, options});
     },
 
     setQueryParams(newParams) {

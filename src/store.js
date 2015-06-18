@@ -17,11 +17,16 @@ function setState(state) {
 
 function getRequestData(request, params) {
   const collection = storage[request.collection] || [];
-  const data = sift(params, collection);
+  let data = sift(params, collection);
   if (params.$id) {
     return data && data[0];
   }
-  return data.length ? data : null;
+  if (params.$skip || params.$limit) {
+    const skip = params.$skip || 0;
+    const limit = params.$limit ? skip + params.$limit : null;
+    data = data.slice(skip, limit);
+  }
+  return data;
 }
 
 function setRequestData(request, params, data) {
@@ -31,15 +36,17 @@ function setRequestData(request, params, data) {
     let i = sift.indexOf(params, collection);
     if (i > -1) {
       newState = update(collection, {$splice: [request.type === 'DELETE' ? [i, 1] : [i, 1, data]]});
-    } else {
+    } else if (request.type !== 'DELETE') {
       newState = update(collection, {$push: [data]});
     }
   } else if (Array.isArray(data)) {
-    newState = data;
+    newState = update(collection, {$push: data.filter(item => sift.indexOf({$id: item.id}, collection) < 0)});
   } else {
     newState = update(collection, {$push: [data]});
   }
-  setState({[request.collection]: newState});
+  if (newState) {
+    setState({[request.collection]: newState});
+  }
   return data;
 }
 
@@ -51,7 +58,7 @@ function onChange(listener) {
 }
 
 function bootstrap(data) {
-  setState(JSON.parse(data));
+  storage = JSON.parse(data);
 }
 
 function dump() {

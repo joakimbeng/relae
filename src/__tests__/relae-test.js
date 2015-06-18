@@ -10,7 +10,22 @@ const {TestUtils, update} = React.addons;
 
 const enc = val => encodeURIComponent(val);
 
+function url(strings, ...values) {
+  let result = '';
+  for (let i = 0, len = strings.length; i < len; i++) {
+    result += strings[i];
+    if (typeof values[i] !== 'undefined') {
+      result += enc(values[i]);
+    }
+  }
+  return result;
+}
+
 describe('relae', function () {
+  beforeEach(function () {
+    Relae.bootstrap('{}');
+  });
+
   afterEach(function () {
     TestHelpers.unmountComponents();
   });
@@ -74,14 +89,14 @@ describe('relae', function () {
 
     it('can set query params to retrigger data fetch', function (done) {
       nock('http://localhost')
-        .get(`/items?parentId=1&${enc('$limit')}=2&${enc('$skip')}=0`)
+        .get(url`/items?parentId=1&${'$limit'}=2&${'$skip'}=0`)
         .reply(200, [
           {id: 11, title: 'Sub item 1', parentId: 1},
           {id: 12, title: 'Sub item 2', parentId: 1}
         ]);
 
       nock('http://localhost')
-        .get(`/items?parentId=1&${enc('$limit')}=2&${enc('$skip')}=2`)
+        .get(url`/items?parentId=1&${'$limit'}=2&${'$skip'}=2`)
         .reply(200, [
           {id: 13, title: 'Sub item 3', parentId: 1},
           {id: 14, title: 'Sub item 4', parentId: 1}
@@ -161,7 +176,7 @@ describe('relae', function () {
       });
     });
 
-    it('does not set `props` properties to strings when not finding a resource (Issue #2)', function (done) {
+    it('does not set `props` properties to strings when not finding a resource (Issue #2)', function () {
       nock('http://localhost')
         .get('/items/4')
         .reply(404);
@@ -176,17 +191,14 @@ describe('relae', function () {
       });
 
       let container = TestHelpers.renderComponent(<ItemContainer itemId={4} />);
+      let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
 
-      container.ee.once('render', () => {
-        let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
-        items.length.should.equal(0);
-        done();
-      });
+      items.length.should.equal(0);
     });
 
     it('does not send `[object Object]` as query parameter content (Issue #3)', function (done) {
       nock('http://localhost')
-        .get(`/items/4?parentId=${enc('{"$eq":2}')}`)
+        .get(url`/items/4?parentId=${'{"$eq":2}'}`)
         .reply(200, {id: 4, parentId: 2, title: 'An item'});
 
       let ItemContainer = Relae.createContainer(this.Item, {
@@ -203,6 +215,64 @@ describe('relae', function () {
       this.Item.once('render', () => {
         let items = TestUtils.scryRenderedDOMComponentsWithTag(container, 'div');
         items.length.should.equal(1);
+        done();
+      });
+    });
+
+    it('does not overwrite a whole collection in the store for different filters', function (done) {
+      nock('http://localhost')
+        .get(`/items?parentId=1`)
+        .reply(200, [
+          {id: 1, parentId: 1, title: 'Item 1.1'},
+          {id: 2, parentId: 1, title: 'Item 1.2'}
+        ]);
+      nock('http://localhost')
+        .get(`/items?parentId=2`)
+        .reply(200, [
+          {id: 3, parentId: 2, title: 'Item 2.1'},
+          {id: 4, parentId: 2, title: 'Item 2.2'}
+        ]);
+
+      let Item = Relae.createContainer(this.Item, {
+        options: { baseUrl: 'http://localhost' },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      let ItemList = TestHelpers.createEmittingComponent({
+        displayName: 'ItemList',
+        render() {
+          return (
+            <div>
+              {this.props.items.map((item, i) => <Item key={i} itemId={item.id} />)}
+            </div>
+          );
+        }
+      });
+
+      let ItemListContainer = Relae.createContainer(ItemList, {
+        options: { baseUrl: 'http://localhost' },
+        queries: {
+          items: {items: {parentId: '<parentId>'}}
+        }
+      });
+
+      let instance = TestHelpers.renderComponent((
+        <div>
+          <ItemListContainer className="item-list-1" parentId={1} />
+          <ItemListContainer className="item-list-2" parentId={2} />
+        </div>
+      ));
+
+      ItemList.once('render', () => {
+        let items = TestUtils.scryRenderedComponentsWithType(instance, Item);
+        items.map(item => item.getDOMNode().textContent).should.eql([
+          'id: 1, Item 1.1',
+          'id: 2, Item 1.2',
+          'id: 3, Item 2.1',
+          'id: 4, Item 2.2'
+        ]);
         done();
       });
     });
@@ -228,7 +298,7 @@ describe('relae', function () {
         render() {
           return (
             <div className="story">
-              <input onChange={this.onTitleChange} type="text" value={this.props.story.title} />
+              <input className="title-input" onChange={this.onTitleChange} type="text" value={this.props.story.title} />
               <button className="remove-button" onClick={this.removeStory}>Remove</button>
             </div>
           );
@@ -251,11 +321,15 @@ describe('relae', function () {
       let StoryList = this.StoryList = TestHelpers.createEmittingComponent({
         displayName: 'StoryList',
 
+        addStory() {
+          this.props.addStory();
+        },
+
         render() {
           return (
             <div>
               {this.props.stories.map((story, i) => <StoryContainer storyId={story.id} key={i} />)}
-              <button className="add-button" onClick={this.props.addStory}>Add story</button>
+              <button className="add-button" onClick={this.addStory}>Add story</button>
             </div>
           );
         }
@@ -286,7 +360,7 @@ describe('relae', function () {
       this.StoryList.once('render', () => {
         let button = TestUtils.findRenderedDOMComponentWithClass(container, 'add-button');
         this.StoryList.once('render', () => {
-          let stories = TestUtils.scryRenderedDOMComponentsWithClass(container, 'story');
+          let stories = TestUtils.scryRenderedComponentsWithType(container, this.StoryContainer);
           stories.length.should.equal(2);
           done();
         });
@@ -296,39 +370,39 @@ describe('relae', function () {
 
     it('can do $update actions', function (done) {
       nock('http://localhost')
-        .put('/stories/2')
-        .reply(201, {id: 2, title: 'My secondest post'});
+        .put('/stories/1')
+        .reply(201, {id: 1, title: 'My changed post'});
 
       let StoryList = this.StoryListContainer;
 
       let container = TestHelpers.renderComponent(<StoryList />);
 
       this.StoryList.once('render', () => {
-        let stories = TestUtils.scryRenderedDOMComponentsWithClass(container, 'story');
-        let input = TestUtils.findRenderedDOMComponentWithTag(stories[1], 'input');
+        let stories = TestUtils.scryRenderedComponentsWithType(container, this.StoryContainer);
+        let input = TestUtils.findRenderedDOMComponentWithClass(stories[0], 'title-input');
         this.Story.once('render', () => {
-          input.getDOMNode().value.should.equal('My secondest post');
+          input.getDOMNode().value.should.equal('My changed post');
           done();
         });
-        TestUtils.Simulate.change(input, {target: {value: 'My secondest post'}});
+        TestUtils.Simulate.change(input, {target: {value: 'My changed post'}});
       });
     });
 
     it('can do $delete actions', function (done) {
       nock('http://localhost')
-        .delete('/stories/2')
+        .delete('/stories/1')
         .reply(204);
 
       let StoryList = this.StoryListContainer;
 
       let container = TestHelpers.renderComponent(<StoryList />);
 
-      this.StoryList.once('render', () => {
+      this.Story.on('render', () => {
         let stories = TestUtils.scryRenderedDOMComponentsWithClass(container, 'story');
-        let button = TestUtils.findRenderedDOMComponentWithClass(stories[1], 'remove-button');
+        let button = TestUtils.findRenderedDOMComponentWithClass(stories[0], 'remove-button');
         this.StoryList.once('render', () => {
           stories = TestUtils.scryRenderedDOMComponentsWithClass(container, 'story');
-          stories.length.should.equal(1);
+          stories.length.should.equal(0);
           done();
         });
         TestUtils.Simulate.click(button);
@@ -336,4 +410,3 @@ describe('relae', function () {
     });
   });
 });
-

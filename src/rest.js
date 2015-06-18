@@ -27,6 +27,10 @@ function getHttpRequest(queryRequest) {
   };
 }
 
+function prepareForQueryString(params) {
+  return Object.keys(params).reduce((obj, key) => assign(obj, {[key]: JSON.stringify(params[key])}), {});
+}
+
 function getHttpRequests(queryRequests) {
   return queryRequests.map(getHttpRequest);
 }
@@ -35,36 +39,41 @@ function hasBody(request) {
   return BODY_METHODS.indexOf(request.method) > -1;
 }
 
-function run({request, params, options}) {
-  request = getHttpRequest(request);
-  const url = params.$id ? request.url.replace('<$id>', params.$id) : request.url;
+function run({request, params, data, options}) {
+  const httpRequest = getHttpRequest(request);
+  const path = params.$id ? httpRequest.url.replace('<$id>', params.$id) : httpRequest.url;
   const baseUrl = options.baseUrl || null;
-
-  let data = assign({}, params);
-  let dataProp = 'entity';
-
-  if (params.$id) {
-    delete data.$id;
-  }
-
-  if (!hasBody(request)) {
-    dataProp = 'params';
-    data = Object.keys(data).reduce((obj, key) => assign(obj, {[key]: JSON.stringify(data[key])}), {});
-  }
-
-  return xhr({
-    method: request.method,
-    baseUrl: baseUrl,
-    path: url,
+  const config = {
+    method: httpRequest.method,
+    baseUrl,
+    path,
     headers: {
       'Content-Type': 'application/json'
-    },
-    [dataProp]: data
-  })
+    }
+  };
+
+  params = assign({}, params);
+
+  if (params.$id) {
+    delete params.$id;
+  }
+
+  config.params = prepareForQueryString(params);
+
+  if (hasBody(httpRequest)) {
+    config.entity = data;
+  }
+
+  return xhr(config)
   .then((res) => {
     return res.entity;
   }, (res) => {
-    throw res.status;
+    if (res.error) {
+      throw res.error;
+    } else if (res.status) {
+      throw res.status;
+    }
+    throw res;
   });
 }
 
