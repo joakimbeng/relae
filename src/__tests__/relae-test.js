@@ -346,7 +346,7 @@ describe('relae', function () {
         displayName: 'StoryList',
 
         addStory() {
-          this.props.addStory();
+          this.props.addStory({title: 'My second post'});
         },
 
         render() {
@@ -375,6 +375,26 @@ describe('relae', function () {
     it('can do $create actions', function (done) {
       nock('http://localhost')
         .post('/stories')
+        .reply(201, {id: 2, title: 'My second post'});
+
+      let StoryList = this.StoryListContainer;
+
+      let container = TestHelpers.renderComponent(<StoryList />);
+
+      this.StoryList.once('render', () => {
+        let button = TestUtils.findRenderedDOMComponentWithClass(container, 'add-button');
+        this.StoryList.once('render', () => {
+          let stories = TestUtils.scryRenderedComponentsWithType(container, this.StoryContainer);
+          stories.length.should.equal(2);
+          done();
+        });
+        TestUtils.Simulate.click(button);
+      });
+    });
+
+    it('posts provided data for $create actions (Fixes #5)', function (done) {
+      nock('http://localhost')
+        .post('/stories', {title: 'My second post'})
         .reply(201, {id: 2, title: 'My second post'});
 
       let StoryList = this.StoryListContainer;

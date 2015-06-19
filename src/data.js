@@ -57,7 +57,7 @@ function fetcher(opts) {
     } else if (request.type === 'UPDATE' || request.type === 'DELETE') {
       change({request, params, data});
     }
-    rest.run({request, params, options: assign({}, opts, options)})
+    rest.run({request, params, data, options: assign({}, opts, options)})
       .then(result => change({request, params, data: result}))
       .catch(err => {
         // FIXME: real error handling
