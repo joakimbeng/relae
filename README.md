@@ -112,6 +112,54 @@ Specifies what mutative actions a wrapped component can do, the syntax is simila
 
 The `name` of the action is used to create a mutation function that's passed to the wrapped component as `props`. The `path` is the resource path in the API, see [`queries`](#key-queries) above. `type` can be any of `$create` (makes a POST request), `$update` (PUT request) and `$delete` (DELETE request). See below about [`filter`](#filter).
 
+## API
+
+### `Relae.createContainer(Component, config)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| Component | `React.Component` | The component to wrap with a Relä container |
+| config | `Object` | [The container configuration](#container-configuration) |
+
+
+Wraps a React component with a Relä container, to get all the Relä goodness.
+
+
+### `Relae.dump()`
+
+Returns a JSON stringified dump of all the data in the internal store. Can be used in conjunction with [`Relae.boostrap()`](#relaebootstrapdata).
+
+
+### `Relae.bootstrap(data)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| data | `String` | JSON stringified data |
+
+
+Fills the internal store with the provided data. Should be used in conjunction with [`Relae.dump()`](#relaedump).
+
+
+### `Relae.setIdProperty(name)`
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| name | `String` | The name of the `id` property to use | `"id"` |
+
+
+Relä identifies objects in a collection by its id property, which defaults to `"id"`. If you're using Relä with e.g. MongoDB you should set this to `"_id"` with: `Relae.setIdProperty('_id')`.
+
+
+### `Relae.onChange(listener)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| listener | `Function` | The function which will be triggered when the internal store changes |
+
+
+Registers listeners that are triggered when the internal store is changed.
+
+
 ## Filter
 
 The `filter` is a MongoDB like filter that's passed as a query string to the API (for GET and DELETE requests), it's also used to query the internal cache store using [sift](https://www.npmjs.com/package/sift).
