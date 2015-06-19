@@ -73,10 +73,14 @@ function getInitialStateFromRequests(requests) {
   }, {});
 }
 
+function getParamValue(name, values) {
+  return name.split(/\./g).reduce((value, key) => value[key], values);
+}
+
 function setParamValues(declarationParams, queryParams) {
   return Object.keys(declarationParams).reduce((params, key) => {
     if (isQueryParam(declarationParams[key])) {
-      params[key] = queryParams[declarationParams[key].slice(1, -1)];
+      params[key] = getParamValue(declarationParams[key].slice(1, -1), queryParams);
     } else if (declarationParams[key] !== null && typeof declarationParams[key] === 'object') {
       params[key] = setParamValues(declarationParams[key], queryParams);
     } else {
@@ -86,9 +90,22 @@ function setParamValues(declarationParams, queryParams) {
   }, {});
 }
 
+function getParamNames(obj, parentKey) {
+  return Object.keys(obj).reduce((result, key) => {
+    let nestedKey = (parentKey ? parentKey + '.' : '') + key;
+    if (obj[key] !== null && typeof obj[key] === 'object') {
+      result.push.apply(result, getParamNames(obj[key], nestedKey));
+    } else {
+      result.push(nestedKey);
+    }
+    return result;
+  }, []);
+}
+
 export {
   getContainerName,
   getRequestsFromQueries,
   getInitialStateFromRequests,
-  setParamValues
+  setParamValues,
+  getParamNames
 };

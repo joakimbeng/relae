@@ -68,6 +68,30 @@ describe('relae', function () {
       });
     });
 
+    it('gets a single item using nested queryParams', function (done) {
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queryParams: {
+          item: {
+            id: 1
+          }
+        },
+        queries: {
+          item: {items: {$id: '<item.id>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer />);
+
+      this.Item.once('render', () => {
+        let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+        item.getDOMNode().textContent.should.equal('id: 1, My first item');
+        done();
+      });
+    });
+
     it('gets a single item using props', function (done) {
       let ItemContainer = Relae.createContainer(this.Item, {
         options: {
@@ -79,6 +103,25 @@ describe('relae', function () {
       });
 
       let container = TestHelpers.renderComponent(<ItemContainer itemId={1} />);
+
+      this.Item.once('render', () => {
+        let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+        item.getDOMNode().textContent.should.equal('id: 1, My first item');
+        done();
+      });
+    });
+
+    it('gets a single item using nested props', function (done) {
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<item.id>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer item={{id: 1}} />);
 
       this.Item.once('render', () => {
         let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
@@ -131,6 +174,71 @@ describe('relae', function () {
         },
         queries: {
           items: {items: {parentId: 1, $limit: '<limit>', $skip: '<skip>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ParentItemContainer />);
+
+      ParentItem.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithClass(container, 'item');
+        items.length.should.equal(2);
+        items[0].getDOMNode().textContent.should.equal('id: 11, Sub item 1');
+        items[1].getDOMNode().textContent.should.equal('id: 12, Sub item 2');
+        let button = TestUtils.findRenderedDOMComponentWithClass(container, 'next-button');
+        ParentItem.once('render', () => {
+          items = TestUtils.scryRenderedDOMComponentsWithClass(container, 'item');
+          items.length.should.equal(2);
+          items[0].getDOMNode().textContent.should.equal('id: 13, Sub item 3');
+          items[1].getDOMNode().textContent.should.equal('id: 14, Sub item 4');
+          done();
+        });
+        TestUtils.Simulate.click(button);
+      });
+    });
+
+    it('can set nested query params to retrigger data fetch', function (done) {
+      nock('http://localhost')
+        .get(url`/items?parentId=1`)
+        .reply(200, [
+          {id: 11, title: 'Sub item 1', parentId: 1},
+          {id: 12, title: 'Sub item 2', parentId: 1}
+        ]);
+
+      nock('http://localhost')
+        .get(url`/items?parentId=2`)
+        .reply(200, [
+          {id: 13, title: 'Sub item 3', parentId: 2},
+          {id: 14, title: 'Sub item 4', parentId: 2}
+        ]);
+
+      let Item = this.Item;
+
+      let ParentItem = TestHelpers.createEmittingComponent({
+        displayName: 'ParentItem',
+
+        nextPage() {
+          this.props.setQueryParams({parent: {id: 2}});
+        },
+
+        render() {
+          return (
+            <div>
+              {this.props.items.map((item, i) => <Item key={i} item={item} />)}
+              <button className="next-button" onClick={this.nextPage}>Next page</button>
+            </div>
+          );
+        }
+      });
+
+      let ParentItemContainer = Relae.createContainer(ParentItem, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queryParams: {
+          parent: {id: 1}
+        },
+        queries: {
+          items: {items: {parentId: '<parent.id>'}}
         }
       });
 

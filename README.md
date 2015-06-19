@@ -213,6 +213,11 @@ React.render(<ItemListContainer parentItemId={2} />, document);
 
 Which would then trigger a `GET http://localhost/items?page=1&parentItemId=2` request.
 
+#### Nested filter parameters
+
+Getting parameter values from nested `queryParams` or `props` can be done using dot notation, e.g. `<parent.id>` will search in `queryParams.parent.id` or `props.parent.id`.
+
+
 ### More examples
 
 Have a look at the tests for now...

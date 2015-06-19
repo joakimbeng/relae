@@ -3,7 +3,13 @@ import update from 'react/lib/update';
 import assign from 'object-assign';
 import eventEmitter from 'event-emitter';
 import data from './data';
-import {getContainerName, getRequestsFromQueries, getInitialStateFromRequests, setParamValues} from './utils';
+import {
+  getContainerName,
+  getParamNames,
+  getRequestsFromQueries,
+  getInitialStateFromRequests,
+  setParamValues
+} from './utils';
 
 const STATES = {
   PENDING: 'PENDING',
@@ -21,7 +27,6 @@ export default (Component, config) => {
   const mutationRequests = getRequestsFromQueries(mutations);
   const initialRequestNames = queryRequests.map(({name}) => name);
   const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(queryRequests));
-
 
   return React.createClass({
     displayName,
@@ -77,7 +82,7 @@ export default (Component, config) => {
     },
 
     setQueryParams(newParams) {
-      const paramNames = Object.keys(newParams);
+      const paramNames = getParamNames(newParams);
       const requestsToRedo = queryRequests.filter(request => paramNames.some(name => request.paramDependencies.indexOf(name) > -1));
       queryParams = update(queryParams, {$merge: newParams});
       this.fetch(requestsToRedo, {force: true});
