@@ -2,7 +2,9 @@ import update from 'react/lib/update';
 import sift from 'sift';
 import eventEmitter from 'event-emitter';
 
-sift.useOperator('id', (a, b) => a === b.id);
+let idProperty = 'id';
+
+sift.useOperator('id', (a, b) => a === b[idProperty]);
 sift.useOperator('limit', () => true);
 sift.useOperator('skip', () => true);
 
@@ -40,7 +42,7 @@ function setRequestData(request, params, data) {
       newState = update(collection, {$push: [data]});
     }
   } else if (Array.isArray(data)) {
-    newState = update(collection, {$push: data.filter(item => sift.indexOf({$id: item.id}, collection) < 0)});
+    newState = update(collection, {$push: data.filter(item => sift.indexOf({$id: item[idProperty]}, collection) < 0)});
   } else {
     newState = update(collection, {$push: [data]});
   }
@@ -65,11 +67,16 @@ function dump() {
   return JSON.stringify(storage);
 }
 
+function setIdProperty(name) {
+  idProperty = name;
+}
+
 export {
   bootstrap,
   dump,
   setState,
   getRequestData,
   setRequestData,
+  setIdProperty,
   onChange
 };

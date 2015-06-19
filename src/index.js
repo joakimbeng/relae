@@ -1,8 +1,10 @@
 import createContainer from './create';
-import {bootstrap, dump} from './store';
+import {bootstrap, dump, setIdProperty, onChange} from './store';
 
 export default {
   createContainer,
   bootstrap,
-  dump
+  dump,
+  setIdProperty,
+  onChange
 };

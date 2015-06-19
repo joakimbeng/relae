@@ -453,4 +453,51 @@ describe('relae', function () {
       });
     });
   });
+
+  describe('setIdProperty', function () {
+    before(function () {
+      Relae.setIdProperty('_id');
+    });
+
+    after(function () {
+      Relae.setIdProperty('id');
+    });
+
+    beforeEach(function () {
+      nock('http://my.host')
+        .get('/items/1')
+        .reply(200, {_id: 1, title: 'My item'});
+
+      this.Item = TestHelpers.createEmittingComponent({
+        displayName: 'Item',
+        render() {
+          const id = this.props.item._id;
+          const title = this.props.item.title;
+          return <div className="item">id: {id}, {title}</div>;
+        }
+      });
+    });
+
+    it('uses the set id property when getting data', function (done) {
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://my.host'
+        },
+        queryParams: {
+          itemId: 1
+        },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<ItemContainer />);
+
+      this.Item.once('render', () => {
+        let item = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+        item.getDOMNode().textContent.should.equal('id: 1, My item');
+        done();
+      });
+    });
+  });
 });
