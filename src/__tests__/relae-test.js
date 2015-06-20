@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 /* eslint func-names:0 */
-/* globals sinon */
+/* globals sinon, should */
 import React from 'react/addons';
 import nock from 'nock';
 import Relae from '../.';
@@ -259,6 +259,36 @@ describe('relae', function () {
         });
         TestUtils.Simulate.click(button);
       });
+    });
+
+    it('does not crash for not set $id query parameter', function (done) {
+      let badRequest = nock('http://localhost')
+        .get('/items/null')
+        .reply(400);
+
+      let ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      TestHelpers.renderComponent(<ItemContainer />);
+
+      this.Item.once('render', () => {
+        done(new Error('An item should not be rendered!'));
+      });
+
+      setTimeout(() => {
+        try {
+          badRequest.done();
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }, 10);
     });
 
     it('does not crash for filter with NULL values (Issue #1)', function (done) {

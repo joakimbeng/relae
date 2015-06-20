@@ -55,7 +55,7 @@ function stripTrailingSlash(url) {
 
 function run({request, params, data, options}) {
   const httpRequest = getHttpRequest(request);
-  const url = params.$id ? httpRequest.url.replace('<$id>', params.$id) : httpRequest.url;
+  const url = request.params.$id ? httpRequest.url.replace('<$id>', params.$id || 'null') : httpRequest.url;
   const baseUrl = options.baseUrl || '';
   const path = stripTrailingSlash(baseUrl) + addLeadingSlash(url);
   const config = {
@@ -68,7 +68,7 @@ function run({request, params, data, options}) {
 
   params = assign({}, params);
 
-  if (params.$id) {
+  if (request.params.$id) {
     delete params.$id;
   }
 

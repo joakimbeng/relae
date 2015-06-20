@@ -49,7 +49,7 @@ function fetcher(opts) {
     if (request.type === 'READ') {
       listen(request, params);
     }
-    if (request.type === 'READ' && params.$id) {
+    if (request.type === 'READ' && request.params.$id) {
       const existingData = store.getRequestData(request, params);
       if (existingData) {
         return receive({request, params, data: existingData});

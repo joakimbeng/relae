@@ -20,7 +20,7 @@ function setState(state) {
 function getRequestData(request, params) {
   const collection = storage[request.collection] || [];
   let data = sift(params, collection);
-  if (params.$id) {
+  if (request.params.$id) {
     return data && data[0];
   }
   if (params.$skip || params.$limit) {
@@ -34,7 +34,7 @@ function getRequestData(request, params) {
 function setRequestData(request, params, data) {
   const collection = storage[request.collection] || [];
   let newState;
-  if (params.$id) {
+  if (request.params.$id) {
     let i = sift.indexOf(params, collection);
     if (i > -1) {
       newState = update(collection, {$splice: [request.type === 'DELETE' ? [i, 1] : [i, 1, data]]});
