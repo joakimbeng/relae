@@ -77,17 +77,27 @@ function getParamValue(name, values) {
   return name.split(/\./g).reduce((value, key) => value[key], values);
 }
 
+function setParamValue(val, queryParams) {
+  if (typeof val === 'string' && isQueryParam(val)) {
+    return getParamValue(val.slice(1, -1), queryParams);
+  }
+  return val;
+}
+
+function isObject(val) {
+  return Object.prototype.toString.call(val) === '[object Object]';
+}
+
 function setParamValues(declarationParams, queryParams) {
-  return Object.keys(declarationParams).reduce((params, key) => {
-    if (isQueryParam(declarationParams[key])) {
-      params[key] = getParamValue(declarationParams[key].slice(1, -1), queryParams);
-    } else if (declarationParams[key] !== null && typeof declarationParams[key] === 'object') {
+  if (isObject(declarationParams)) {
+    return Object.keys(declarationParams).reduce((params, key) => {
       params[key] = setParamValues(declarationParams[key], queryParams);
-    } else {
-      params[key] = declarationParams[key];
-    }
-    return params;
-  }, {});
+      return params;
+    }, {});
+  } else if (Array.isArray(declarationParams)) {
+    return declarationParams.map(val => setParamValue(val, queryParams));
+  }
+  return setParamValue(declarationParams, queryParams);
 }
 
 function getParamNames(obj, parentKey) {

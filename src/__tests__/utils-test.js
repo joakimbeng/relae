@@ -13,6 +13,13 @@ describe('utils', function () {
         parentId: 1
       });
     });
+
+    it('handles filter parameters containing arrays correctly (Issue #6)', function () {
+      let query1 = {$or: [{prop1: true}, {prop2: false}]};
+      utils.setParamValues(query1, {}).should.eql(query1);
+      let query2 = {prop: {$in: ['alpha', 'beta']}};
+      utils.setParamValues(query2, {}).should.eql(query2);
+    });
   });
 
   describe('getRequestsFromQueries', function () {
