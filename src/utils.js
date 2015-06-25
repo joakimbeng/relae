@@ -95,7 +95,7 @@ function setParamValues(declarationParams, queryParams) {
       return params;
     }, {});
   } else if (Array.isArray(declarationParams)) {
-    return declarationParams.map(val => setParamValue(val, queryParams));
+    return declarationParams.map(val => setParamValues(val, queryParams));
   }
   return setParamValue(declarationParams, queryParams);
 }

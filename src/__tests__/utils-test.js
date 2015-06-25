@@ -20,6 +20,16 @@ describe('utils', function () {
       let query2 = {prop: {$in: ['alpha', 'beta']}};
       utils.setParamValues(query2, {}).should.eql(query2);
     });
+
+    it('handles filter parameters containing arrays with parameters correctly', function () {
+      let query1 = {$or: [{prop1: '<id>'}, {prop2: '<id>'}]};
+      utils.setParamValues(query1, {id: 1}).should.eql({
+        $or: [
+          {prop1: 1},
+          {prop2: 1}
+        ]
+      });
+    });
   });
 
   describe('getRequestsFromQueries', function () {
