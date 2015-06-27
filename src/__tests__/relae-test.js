@@ -590,6 +590,45 @@ describe('relae', function () {
         TestUtils.Simulate.click(button);
       });
     });
+
+    it('uses provided data as query parameters', function (done) {
+      let deleteRequest = nock('http://localhost')
+        .delete('/foobar/1')
+        .reply(204);
+
+      let FooBar = TestHelpers.createEmittingComponent({
+        displayName: 'FooBar',
+
+        onRemove() {
+          this.props.remove({foobarId: 1});
+        },
+
+        render() {
+          return <button className="remove-button" onClick={this.onRemove}>remove</button>;
+        }
+      });
+
+      let FooBarContainer = Relae.createContainer(FooBar, {
+        mutations: {
+          remove: {foobar: {$delete: {$id: '<foobarId>'}}}
+        }
+      });
+
+      let container = TestHelpers.renderComponent(<FooBarContainer />);
+
+      let button = TestUtils.findRenderedDOMComponentWithClass(container, 'remove-button');
+
+      TestUtils.Simulate.click(button);
+
+      setTimeout(() => {
+        try {
+          deleteRequest.done();
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }, 10);
+    });
   });
 
   describe('setIdProperty', function () {

@@ -75,7 +75,7 @@ export default (Component, config = {}) => {
     },
 
     mutate(request, requestData) {
-      const qp = assign({}, queryParams, this.props);
+      const qp = assign({}, queryParams, this.props, requestData);
       const params = setParamValues(request.params, qp);
       this.fetcher.run({request, params, data: requestData, options});
     },
