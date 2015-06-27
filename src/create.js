@@ -16,8 +16,7 @@ const STATES = {
   DONE: 'DONE'
 };
 
-export default (Component, config) => {
-  config = assign({}, config);
+export default (Component, config = {}) => {
   let queryParams = assign({}, config.queryParams);
   const options = assign({}, config.options);
   const queries = assign({}, config.queries);
@@ -26,7 +25,7 @@ export default (Component, config) => {
   const queryRequests = getRequestsFromQueries(queries);
   const mutationRequests = getRequestsFromQueries(mutations);
   const initialRequestNames = queryRequests.map(({name}) => name);
-  const initialState = assign({$containerState: STATES.PENDING}, getInitialStateFromRequests(queryRequests));
+  const initialState = assign({$containerState: initialRequestNames.length ? STATES.PENDING : STATES.DONE}, getInitialStateFromRequests(queryRequests));
 
   return React.createClass({
     displayName,
