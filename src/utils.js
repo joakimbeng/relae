@@ -1,3 +1,5 @@
+import isPojo from 'is-pojo';
+
 const DEFAULT_TYPE = 'READ';
 const PROP_TO_TYPE = {
   $create: 'CREATE',
@@ -84,12 +86,8 @@ function setParamValue(val, queryParams) {
   return val;
 }
 
-function isObject(val) {
-  return Object.prototype.toString.call(val) === '[object Object]';
-}
-
 function setParamValues(declarationParams, queryParams) {
-  if (isObject(declarationParams)) {
+  if (isPojo(declarationParams)) {
     return Object.keys(declarationParams).reduce((params, key) => {
       params[key] = setParamValues(declarationParams[key], queryParams);
       return params;
