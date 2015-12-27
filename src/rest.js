@@ -23,7 +23,12 @@ function getHttpRequest(queryRequest) {
     collection: queryRequest.collection,
     params: queryRequest.params,
     paramDependencies: queryRequest.paramDependencies,
-    method: TYPES_TO_METHOD[queryRequest.type]
+    method: TYPES_TO_METHOD[queryRequest.type],
+    getFullUrl(params, options = {}) {
+      const path = queryRequest.params.$id ? url.replace('<$id>', encodeURIComponent(params.$id || 'null')) : url;
+      const baseUrl = options.baseUrl || '';
+      return stripTrailingSlash(baseUrl) + addLeadingSlash(path);
+    }
   };
 }
 
@@ -55,12 +60,9 @@ function stripTrailingSlash(url) {
 
 function run({request, params, data, options}) {
   const httpRequest = getHttpRequest(request);
-  const url = request.params.$id ? httpRequest.url.replace('<$id>', params.$id || 'null') : httpRequest.url;
-  const baseUrl = options.baseUrl || '';
-  const path = stripTrailingSlash(baseUrl) + addLeadingSlash(url);
   const config = {
     method: httpRequest.method,
-    path,
+    path: httpRequest.getFullUrl(params, options),
     headers: {
       'Content-Type': 'application/json'
     }
@@ -95,10 +97,8 @@ function onPush() {
   // noop
 }
 
-let rest = {
+export default {
   getHttpRequests,
   run,
   onPush
 };
-
-export default rest;

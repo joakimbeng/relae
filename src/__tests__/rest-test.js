@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 /* eslint func-names:0 */
 import * as utils from '../utils';
-import * as rest from '../rest';
+import rest from '../rest';
 
 describe('rest', function () {
   describe('getHttpRequests', function () {
@@ -48,6 +48,15 @@ describe('rest', function () {
           story: {stories: {$id: '<storyId>'}}
         }));
         requests[0].url.should.equal('/stories/<$id>');
+      });
+    });
+
+    describe('getFullUrl', function () {
+      it('replaces <$id> in url with $id param and prefixes with `baseUrl`', function () {
+        let requests = rest.getHttpRequests(utils.getRequestsFromQueries({
+          story: {stories: {$id: '<storyId>'}}
+        }));
+        requests[0].getFullUrl({$id: '#1'}, {baseUrl: 'http://example.com'}).should.equal('http://example.com/stories/%231');
       });
     });
 
