@@ -14,7 +14,7 @@ let storage = {};
 
 function setState(state) {
   storage = update(storage, {$merge: state});
-  Object.keys(state).forEach((key) => ee.emit('change', key));
+  Object.keys(state).forEach(key => ee.emit('change', key));
 }
 
 function getRequestData(request, params) {
@@ -35,7 +35,7 @@ function setRequestData(request, params, data) {
   const collection = storage[request.collection] || [];
   let newState;
   if (request.params.$id) {
-    let i = sift.indexOf(params, collection);
+    const i = sift.indexOf(params, collection);
     if (i > -1) {
       newState = update(collection, {$splice: [request.type === 'DELETE' ? [i, 1] : [i, 1, data]]});
     } else if (request.type !== 'DELETE') {

@@ -15,7 +15,7 @@ function getTypeAndParams(declarationParams) {
   let params = declarationParams || {};
   let type = DEFAULT_TYPE;
 
-  for (let p in PROP_TO_TYPE) {
+  for (const p in PROP_TO_TYPE) {
     if (params[p]) {
       params = params[p];
       type = PROP_TO_TYPE[p];
@@ -100,9 +100,9 @@ function setParamValues(declarationParams, queryParams) {
 
 function getParamNames(obj, parentKey) {
   return Object.keys(obj).reduce((result, key) => {
-    let nestedKey = (parentKey ? parentKey + '.' : '') + key;
+    const nestedKey = `${parentKey ? `${parentKey}.` : ''}${key}`;
     if (obj[key] !== null && typeof obj[key] === 'object') {
-      result.push.apply(result, getParamNames(obj[key], nestedKey));
+      result.push(...getParamNames(obj[key], nestedKey));
     } else {
       result.push(nestedKey);
     }

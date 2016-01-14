@@ -2,11 +2,11 @@
 /* eslint func-names:0 */
 import * as utils from '../utils';
 
-describe('utils', function () {
-  describe('setParamValues', function () {
-    it('replaces parameters in a nested object with their values', function () {
-      let query = {storyId: '<storyId>', title: {$exists: '<titleExists>'}, parentId: 1};
-      let params = {storyId: 1, titleExists: true};
+describe('utils', () => {
+  describe('setParamValues', () => {
+    it('replaces parameters in a nested object with their values', () => {
+      const query = {storyId: '<storyId>', title: {$exists: '<titleExists>'}, parentId: 1};
+      const params = {storyId: 1, titleExists: true};
       utils.setParamValues(query, params).should.eql({
         storyId: 1,
         title: {$exists: true},
@@ -14,15 +14,15 @@ describe('utils', function () {
       });
     });
 
-    it('handles filter parameters containing arrays correctly (Issue #6)', function () {
-      let query1 = {$or: [{prop1: true}, {prop2: false}]};
+    it('handles filter parameters containing arrays correctly (Issue #6)', () => {
+      const query1 = {$or: [{prop1: true}, {prop2: false}]};
       utils.setParamValues(query1, {}).should.eql(query1);
-      let query2 = {prop: {$in: ['alpha', 'beta']}};
+      const query2 = {prop: {$in: ['alpha', 'beta']}};
       utils.setParamValues(query2, {}).should.eql(query2);
     });
 
-    it('handles filter parameters containing arrays with parameters correctly', function () {
-      let query1 = {$or: [{prop1: '<id>'}, {prop2: '<id>'}]};
+    it('handles filter parameters containing arrays with parameters correctly', () => {
+      const query1 = {$or: [{prop1: '<id>'}, {prop2: '<id>'}]};
       utils.setParamValues(query1, {id: 1}).should.eql({
         $or: [
           {prop1: 1},
@@ -32,9 +32,9 @@ describe('utils', function () {
     });
   });
 
-  describe('getRequestsFromQueries', function () {
-    it('defaults to READ request', function () {
-      let queries = {
+  describe('getRequestsFromQueries', () => {
+    it('defaults to READ request', () => {
+      const queries = {
         stories: {story: {page: 1}}
       };
       utils.getRequestsFromQueries(queries).should.eql([{
@@ -48,8 +48,8 @@ describe('utils', function () {
       }]);
     });
 
-    it('lists all used params in query', function () {
-      let queries = {
+    it('lists all used params in query', () => {
+      const queries = {
         stories: {story: {page: '<pageId>'}}
       };
       utils.getRequestsFromQueries(queries).should.eql([{
@@ -63,8 +63,8 @@ describe('utils', function () {
       }]);
     });
 
-    it('is a CREATE request if $create is set', function () {
-      let queries = {
+    it('is a CREATE request if $create is set', () => {
+      const queries = {
         addStory: {story: {$create: {}}}
       };
       utils.getRequestsFromQueries(queries).should.eql([{
@@ -76,8 +76,8 @@ describe('utils', function () {
       }]);
     });
 
-    it('is a DELETE request if $delete is set', function () {
-      let queries = {
+    it('is a DELETE request if $delete is set', () => {
+      const queries = {
         removeStory: {story: {$delete: {}}}
       };
       utils.getRequestsFromQueries(queries).should.eql([{
@@ -89,8 +89,8 @@ describe('utils', function () {
       }]);
     });
 
-    it('is a UPDATE request if $update is set', function () {
-      let queries = {
+    it('is a UPDATE request if $update is set', () => {
+      const queries = {
         updateStory: {story: {$update: {}}}
       };
       utils.getRequestsFromQueries(queries).should.eql([{

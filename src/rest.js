@@ -46,7 +46,7 @@ function hasBody(request) {
 
 function addLeadingSlash(url) {
   if (url[0] !== '/') {
-    return '/' + url;
+    return `/${url}`;
   }
   return url;
 }
@@ -81,9 +81,9 @@ function run({request, params, data, options}) {
   }
 
   return xhr(config)
-  .then((res) => {
+  .then(res => {
     return res.entity;
-  }, (res) => {
+  }, res => {
     if (res.error) {
       throw res.error;
     } else if (res.status) {

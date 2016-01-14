@@ -6,9 +6,9 @@ import * as store from './store';
 function fetcher(opts) {
   const ee = eventEmitter();
 
-  let listeners = [];
+  const listeners = [];
 
-  const getListener = (filter) => {
+  const getListener = filter => {
     for (let i = 0, len = listeners.length; i < len; i++) {
       if (filter(listeners[i])) {
         return listeners[i];
@@ -17,7 +17,11 @@ function fetcher(opts) {
     return null;
   };
 
-  const unregister = store.onChange((collection) => {
+  const receive = ({request, params, data}) => {
+    ee.emit('receive', {request, params, data});
+  };
+
+  const unregister = store.onChange(collection => {
     const l = listeners.filter(({request}) => request.collection === collection);
     l.forEach(({request, params}) => {
       const data = store.getRequestData(request, params);
@@ -27,17 +31,13 @@ function fetcher(opts) {
     });
   });
 
-  const receive = ({request, params, data}) => {
-    ee.emit('receive', {request, params, data});
-  };
-
   const change = ({request, params, data}) => {
     // receive({request, params, data});
     store.setRequestData(request, params, data);
   };
 
   const listen = (request, params) => {
-    let listener = getListener(({request: req}) => req.name === request.name);
+    const listener = getListener(({request: req}) => req.name === request.name);
     if (listener) {
       listener.params = params;
       return;

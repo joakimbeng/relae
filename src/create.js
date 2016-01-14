@@ -56,7 +56,7 @@ export default (Component, config = {}) => {
       }
       this.setState({[request.name]: newState});
       const requestNames = this.initialRequestNames.slice(0);
-      let i = requestNames.indexOf(request.name);
+      const i = requestNames.indexOf(request.name);
       if (i > -1) {
         requestNames.splice(i, 1);
         if (!requestNames.length) {
