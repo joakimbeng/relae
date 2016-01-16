@@ -1,6 +1,6 @@
 {
   "name": "relae",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "A Relay inspired library for React and RESTful backends",
   "main": "es5/index.js",
   "scripts": {
