@@ -260,6 +260,65 @@ describe('relae', () => {
       });
     });
 
+    it('can retrigger data fetch by setting props', function (done) {
+      nock('http://localhost')
+        .get(url`/items/111`)
+        .reply(200, {id: 111, title: 'Item 111', parentId: null});
+
+      nock('http://localhost')
+        .get(url`/items/112`)
+        .reply(200, {id: 112, title: 'Item 112', parentId: null});
+
+      const Item = this.Item;
+
+      const ItemContainer = Relae.createContainer(this.Item, {
+        options: {
+          baseUrl: 'http://localhost'
+        },
+        queries: {
+          item: {items: {$id: '<itemId>'}}
+        }
+      });
+
+      const ItemWrapper = TestHelpers.createEmittingComponent({
+        displayName: 'ItemWrapper',
+
+        getInitialState() {
+          return {itemId: 111};
+        },
+
+        nextItem() {
+          this.setState({itemId: 112});
+        },
+
+        render() {
+          const {itemId} = this.state;
+          return (
+            <div>
+              <ItemContainer itemId={itemId} />
+              <button className="next-button" onClick={this.nextItem}>Next item</button>
+            </div>
+          );
+        }
+      });
+
+      const wrapper = TestHelpers.renderComponent(<ItemWrapper />);
+
+      Item.once('render', () => {
+        let items = TestUtils.scryRenderedDOMComponentsWithClass(wrapper, 'item');
+        items.length.should.equal(1);
+        items[0].getDOMNode().textContent.should.equal('id: 111, Item 111');
+        const button = TestUtils.findRenderedDOMComponentWithClass(wrapper, 'next-button');
+        Item.once('render', () => {
+          items = TestUtils.scryRenderedDOMComponentsWithClass(wrapper, 'item');
+          items.length.should.equal(1);
+          items[0].getDOMNode().textContent.should.equal('id: 112, Item 112');
+          done();
+        });
+        TestUtils.Simulate.click(button);
+      });
+    });
+
     it('does not crash for not set $id query parameter', function (done) {
       const badRequest = nock('http://localhost')
         .get('/items/null')

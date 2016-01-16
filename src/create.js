@@ -11,21 +11,12 @@ import {
   setParamValues
 } from './utils';
 
-const STATES = {
-  PENDING: 'PENDING',
-  DONE: 'DONE'
-};
-
-export default (Component, config = {}) => {
-  let queryParams = assign({}, config.queryParams);
-  const options = assign({}, config.options);
-  const queries = assign({}, config.queries);
-  const mutations = assign({}, config.mutations);
+export default (Component, {options = {}, queryParams = {}, queries = {}, mutations = {}} = {}) => {
   const displayName = getContainerName(Component);
   const queryRequests = getRequestsFromQueries(queries);
   const mutationRequests = getRequestsFromQueries(mutations);
   const initialRequestNames = queryRequests.map(({name}) => name);
-  const initialState = assign({$containerState: initialRequestNames.length ? STATES.PENDING : STATES.DONE}, getInitialStateFromRequests(queryRequests));
+  const initialState = assign({$pendingRequests: initialRequestNames}, getInitialStateFromRequests(queryRequests));
 
   return React.createClass({
     displayName,
@@ -35,7 +26,7 @@ export default (Component, config = {}) => {
     },
 
     componentWillMount() {
-      this.initialRequestNames = initialRequestNames.slice(0);
+      this.queryParams = update(queryParams, {$merge: this.props});
       this.ee = eventEmitter();
       this.fetcher = data(options);
       this.unregister = this.fetcher.onReceive(this.onReceive);
@@ -45,52 +36,68 @@ export default (Component, config = {}) => {
       this.fetch(queryRequests);
     },
 
+    componentWillReceiveProps(nextProps) {
+      this.setQueryParams(nextProps);
+    },
+
+    shouldComponentUpdate(nextProps, nextState) {
+      if (nextState.$pendingRequests.length) {
+        return false;
+      }
+      return Object.keys(nextProps).some(key => nextProps[key] !== this.props[key]) ||
+             Object.keys(nextState).some(key => nextState[key] !== this.state[key]);
+    },
+
     componentWillUnmount() {
       this.ee = undefined;
       this.unregister();
     },
 
-    onReceive({request, data: newState}) {
+    onReceive({request, data: requestData}) {
       if (this.isMounted && !this.isMounted()) {
         return;
       }
-      this.setState({[request.name]: newState});
-      const requestNames = this.initialRequestNames.slice(0);
-      const i = requestNames.indexOf(request.name);
-      if (i > -1) {
-        requestNames.splice(i, 1);
-        if (!requestNames.length) {
-          this.setState({$containerState: STATES.DONE});
-        }
-        this.initialRequestNames = requestNames;
+      const i = this.state.$pendingRequests.indexOf(request.name);
+      const newState = {[request.name]: {$set: requestData}};
+      if (i !== -1) {
+        newState.$pendingRequests = {$splice: [[i, 1]]};
       }
+      this.setState(update(this.state, newState));
     },
 
-    fetch(requests, opt) {
-      const qp = assign({}, queryParams, this.props);
+    fetch(requests, opt = {}) {
       requests.forEach(request => {
-        const params = setParamValues(request.params, qp);
+        const params = setParamValues(request.params, this.queryParams);
         this.fetcher.fetch({request, params, options: opt});
       });
     },
 
     mutate(request, requestData) {
-      const qp = assign({}, queryParams, this.props, requestData);
+      const qp = assign({}, this.queryParams, requestData);
       const params = setParamValues(request.params, qp);
       this.fetcher.run({request, params, data: requestData, options});
     },
 
     setQueryParams(newParams) {
       const paramNames = getParamNames(newParams);
-      const requestsToRedo = queryRequests.filter(request => paramNames.some(name => request.paramDependencies.indexOf(name) > -1));
-      queryParams = update(queryParams, {$merge: newParams});
+      const requestsToRedo = queryRequests.filter(request => paramNames.some(name => request.paramDependencies.indexOf(name) !== -1));
+      this.queryParams = update(this.queryParams, {$merge: newParams});
+      if (requestsToRedo.length) {
+        this.setState(update(this.state, {
+          $pendingRequests: {
+            $push: requestsToRedo
+              .filter(({name}) => this.state.$pendingRequests.indexOf(name) === -1)
+              .map(({name}) => name)
+          }
+        }));
+      }
       this.fetch(requestsToRedo, {force: true});
     },
 
     render() {
       this.ee.emit('render');
 
-      if (this.state.$containerState !== STATES.DONE) {
+      if (this.state.$pendingRequests.length) {
         return null;
       }
 
